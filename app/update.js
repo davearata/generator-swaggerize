@@ -14,7 +14,7 @@ module.exports = {
 
         parsed = require(file);
         content = fs.readFileSync(file);
-        ast = esprima.parse(content, { tokens: true, range: true, comment: true });
+        ast = esprima.parse(content, { tokens: true, range: true, comment: true, sourceType: 'module' });
 
         route.methods.forEach(function (method) {
             var handler, strfn, newast;
@@ -42,7 +42,7 @@ module.exports = {
                 strfn += 'function ' + method.name + '(req, res) {\n    res.sendStatus(501);\n}';
             }
 
-            newast = esprima.parse(strfn, { tokens: true, range: true, comment: true });
+            newast = esprima.parse(strfn, { tokens: true, range: true, comment: true, sourceType: 'module' });
 
             handler = esprima.parse(strfn).body[0];
             handler.type = 'FunctionExpression';
