@@ -1,5 +1,8 @@
 'use strict';
 
+require('babel-register');
+require('babel-polyfill');
+
 var util = require('util'),
     path = require('path'),
 	  fs = require('fs'),
@@ -29,6 +32,7 @@ var ModuleGenerator = yeoman.generators.Base.extend({
         done = this.async();
         this.only = this.options.only;
         this.framework = this.options.framework;
+        this.testFramework = this.options.testFramework;
         this.apiPath = this.options.apiPath && path.resolve(this.options.apiPath);
         this.appname = path.basename(process.cwd());
 
@@ -85,7 +89,12 @@ var ModuleGenerator = yeoman.generators.Base.extend({
             {
                 name: 'framework',
                 message: 'Express, Hapi or Restify:',
-                default: this.framework || 'express',
+                default: this.framework || 'express'
+            },
+            {
+                name: 'testFramework',
+                message: 'Mocha, Tape:',
+                default: this.testFramework || 'tape'
             }
         ];
 
@@ -99,10 +108,16 @@ var ModuleGenerator = yeoman.generators.Base.extend({
             this.githubUser = props.githubUser;
             this.email = props.email;
             this.framework = props.framework && props.framework.toLowerCase() || 'express';
+            this.testFramework = props.testFramework && props.testFramework.toLowerCase() || 'tape';
             this.appRoot = path.basename(process.cwd()) === this.appname ? this.destinationRoot() : path.join(this.destinationRoot(), this.appname);
 
             if (this.framework !== 'express' && this.framework !== 'hapi' && this.framework !== 'restify') {
                 done(new Error('Unrecognized framework: ' + this.framework));
+                return;
+            }
+
+            if (this.testFramework !== 'tape' && this.testFramework !== 'mocha') {
+                done(new Error('Unrecognized testFramework: ' + this.testFramework));
                 return;
             }
 
@@ -369,12 +384,25 @@ var ModuleGenerator = yeoman.generators.Base.extend({
 
             fileName = path.join(self.appRoot, 'tests/test' + opath.replace(/\//g, '_') + '.js');
 
-            self.template('_test_' + self.framework + '.js', fileName, {
+            if (fs.existsSync(fileName)) {
+                fs.writeFileSync(fileName, update.tests(fileName, {
+                    apiPath: apiPath,
+                    handlers: handlersPath,
+                    resourcePath: resourcePath,
+                    operations: operations,
+                    models: models,
+                    testFramework: self.testFramework
+                }));
+                return;
+            }
+
+            self.template('_test_' + self.testFramework + '_' + self.framework +'.js', fileName, {
                 apiPath: apiPath,
                 handlers: handlersPath,
                 resourcePath: resourcePath,
                 operations: operations,
-                models: models
+                models: models,
+                testFramework: self.testFramework
             });
 
         });

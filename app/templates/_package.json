@@ -25,7 +25,13 @@
         "restify": "^3.0.3"<%}%>
     },
     "devDependencies": {
+        <% if (testFramework === 'tape') {%>
         "tape": "^3.0.0",
+        <%}%>
+        <% if (testFramework === 'mocha') {%>
+        "chai": "^3.5.0",
+        "mocha": "^2.4.5",
+        <%}%>
         "js-yaml": "^3.2.6",
         "jshint": "^2.4.1",
         "istanbul": "~0.2.3",

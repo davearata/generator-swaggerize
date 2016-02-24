@@ -104,6 +104,47 @@ test('swagger-express generator', function (t) {
         });
     });
 
+    t.test('creates expected files (default express) (mocha)', function (t) {
+
+        setup(function () {
+            var expected = [
+                '.jshintrc',
+                '.gitignore',
+                '.npmignore',
+                'README.md',
+                'server.js',
+                'package.json',
+                'tests',
+                'tests/test_pets_{id}.js',
+                'tests/test_pets.js',
+                'config',
+                'config/pets.json',
+                'handlers',
+                'handlers/pets',
+                'handlers/pets/{id}.js',
+                'handlers/pets.js',
+                'models',
+                'models/error.js',
+                'models/pet.js'
+            ];
+
+            helpers.mockPrompt(app, {
+                'appname' : 'temp',
+                'apiPath' : path.join(__dirname, 'fixtures/pets.json'),
+                'testFramework': 'mocha'
+            });
+
+            app.options['skip-install'] = true;
+
+            app.run({}, function () {
+                expected.forEach(function (file) {
+                    t.ok(fs.existsSync(path.join(testDir, file)), 'file exists.');
+                });
+                t.end();
+            });
+        });
+    });
+
     t.test('creates expected files (hapi)', function (t) {
 
         setup(function () {

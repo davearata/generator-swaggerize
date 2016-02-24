@@ -1,7 +1,9 @@
 'use strict';
 
 var esprima = require('esprima'),
+    estraverse = require('estraverse'),
     escodegen = require('escodegen'),
+    _ = require('lodash'),
     fs = require('fs'),
     path = require('path'),
     assert = require('assert'),
@@ -10,16 +12,27 @@ var esprima = require('esprima'),
 module.exports = {
 
     handlers: function (file, framework, route) {
-        var content, parsed, ast;
+        var content, ast, existingMethods = {};
 
-        parsed = require(file);
         content = fs.readFileSync(file);
         ast = esprima.parse(content, { tokens: true, range: true, comment: true, sourceType: 'module' });
+
+        estraverse.traverse(ast, {
+          enter: function (node) {
+            if (node.type === 'ExpressionStatement' && _.isObject(node.expression) && node.expression.type === 'AssignmentExpression' && _.isObject(node.expression.left)
+            && node.expression.left.object.name === 'module' && node.expression.left.property.name === 'exports') {
+              node.expression.right.properties.forEach(function(property) {
+                var methodName = property.key.name;
+                existingMethods[methodName] = true;
+              });
+            }
+          }
+        });
 
         route.methods.forEach(function (method) {
             var handler, strfn, newast;
 
-            if (parsed[method.method]) {
+            if (existingMethods[method.method]) {
                 return;
             }
 
@@ -50,7 +63,7 @@ module.exports = {
             ast.body.forEach(function (element) {
                 var assigned;
 
-                if (element.expression.type === 'AssignmentExpression' && element.expression.left.object.name === 'module') {
+                if (_.isObject(element.expression) && element.expression.type === 'AssignmentExpression' && element.expression.left.object.name === 'module') {
                     assigned = element.expression.right;
 
                     assert.strictEqual(assigned.type, 'ObjectExpression');
@@ -81,6 +94,48 @@ module.exports = {
         });
 
         ast = escodegen.attachComments(ast, ast.comments, ast.tokens);
+
+        return escodegen.generate(ast, { comment: true });
+    },
+
+    tests: function (file, options) {
+        var content, ast, existingTests = {}, newTests = [];
+
+        content = fs.readFileSync(file);
+        ast = esprima.parse(content, { tokens: true, range: true, comment: true, sourceType: 'module' });
+
+        estraverse.traverse(ast, {
+          enter: function (node) {
+            if (node.type === 'ExpressionStatement' && node.expression.type === 'CallExpression' && node.expression.callee.name === 'it') {
+              var testName = node.expression.arguments[0].value;
+              existingTests[testName] = true;
+            }
+          }
+        });
+
+        options.operations.forEach(function (operation) {
+          if(existingTests['should ' + operation.method + ' ' + operation.path]) {
+            return;
+          }
+
+          var templateContents = fs.readFileSync(path.join(__dirname, 'templates/_test_mocha_express_operation.js'));
+          var testOptions = _.assign({}, options, {operation: operation});
+          testOptions.operation = operation;
+          var compiled = _.template(templateContents);
+          var operationTestAst = esprima.parse(compiled(testOptions), { tokens: true, range: true, comment: true, sourceType: 'module' });
+          newTests.push(operationTestAst.body[0]);
+        });
+
+        if(newTests.length > 0) {
+          ast = estraverse.replace(ast, {
+            enter: function (node) {
+              if (node.type === 'ExpressionStatement' && node.expression.type === 'CallExpression' && node.expression.callee.name === 'describe') {
+                node.expression.arguments[1].body.body = node.expression.arguments[1].body.body.concat(newTests);
+                return node;
+              }
+            }
+          });
+        }
 
         return escodegen.generate(ast, { comment: true });
     }

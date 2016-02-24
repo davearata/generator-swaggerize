@@ -40,11 +40,16 @@
     "node": "<=4.x"
   },
   "dependencies": {
+    "babel-core": "^6.5.2",
+    "babel-polyfill": "^6.5.0",
+    "babel-register": "^6.5.2",
     "enjoi": "^1.0.1",
     "escodegen": "^1.4.1",
     "esprima": "^2.7.0",
+    "estraverse": "^4.1.1",
     "express": "^4.13.3",
     "js-yaml": "^3.2.6",
+    "lodash": "^4.5.1",
     "restify": "^3.0.3",
     "swagger-schema-official": "^2.0.0-",
     "swaggerize-express": "^4.0.0",
