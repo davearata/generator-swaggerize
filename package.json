@@ -51,6 +51,7 @@
     "js-yaml": "^3.2.6",
     "lodash": "^4.5.1",
     "restify": "^3.0.3",
+    "swagger-parser": "^3.4.0",
     "swagger-schema-official": "^2.0.0-",
     "swaggerize-express": "^4.0.0",
     "swaggerize-hapi": "^1.0.0-",
