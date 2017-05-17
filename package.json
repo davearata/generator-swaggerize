@@ -51,7 +51,7 @@
     "js-yaml": "^3.2.6",
     "lodash": "^4.5.1",
     "restify": "^3.0.3",
-    "swagger-parser": "^3.4.0",
+    "swagger-parser": "github:mikestek/swagger-parser#487e8f0eb593dfdb72fe500f60fc540f4b41a5c2",
     "swagger-schema-official": "^2.0.0-",
     "swaggerize-express": "^4.0.0",
     "swaggerize-hapi": "^1.0.0-",
